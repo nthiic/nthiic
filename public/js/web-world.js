@@ -99,7 +99,8 @@
   // draw Rope
   const drawRope = () => {
     let count = 0;
-    let len = 150 / 10; // 150 is width of assets/img/web.svg aka thread
+    // 150 is width of assets/img/web.svg aka thread
+    let len = 150 / 10;
     let rope;
 
     const createPoints = (x) => new Phaser.Point(x * len, 0);
