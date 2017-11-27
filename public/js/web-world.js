@@ -6,6 +6,32 @@
       thread,
       platforms;
 
+  /**
+   * Return random integer
+   *
+   * @this {Window}
+   * @params {number} min - from minimum
+   * @params {number} max - to maximum
+   * @return {number} random number
+   */
+
+  const randMinMax = (min, max) => game.rnd.integerInRange(min, max);
+  const mapIndexed = R.addIndex(R.map); // can use index in func
+
+  /**
+   * New game object node
+   *
+   * @this {Window}
+   * @params {number} x - coordinate on axis x
+   * @params {number} y - coordinate on axis y
+   */
+
+  const drawNode = (x, y) => {
+    let node = game.add.sprite(x, y, "node", 0);
+    node.scale.set(1);
+    node.anchor.set(0.5);
+  };
+
   const preload = () => {
     game.load.spritesheet("node", "assets/img/node.svg", 15, 15);
     game.load.image("thread", "assets/img/web.svg");
@@ -14,20 +40,12 @@
   };
 
   const fromDoc = () => {
-    /*
-      var coins = game.add.group();
-      for (var i = 0; i < 20; i++)
-      {
-      coins.create(game.world.randomX, game.world.randomY, 'coin', 0);
-      }
-    */
-
+    //game.world.randomY
+    //game.world.randomX
     //game.world.centerX
     //game.world.centerY
-
   };
 
-  // draw web
   const drawWeb = (len, fn) => {
     let vertices = new Array(len), i, x, y;
     let graphics = game.add.graphics();
@@ -60,6 +78,7 @@
     for(i = triangles.length; i; )
     {
       bmd.ctx.beginPath();
+
       --i;
       bmd.ctx.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
       fn(vertices[triangles[i]][0], vertices[triangles[i]][1]);
@@ -80,37 +99,25 @@
   // draw Rope
   const drawRope = () => {
     let count = 0;
-    let length = 150 / 10;
-    let points = [];
+    let len = 150 / 10; // 150 is width of assets/img/web.svg aka thread
+    let rope;
 
-    for (let i = 0; i < 10; i++)
-    {
-      points.push(new Phaser.Point(i * length, 0));
-    }
+    const createPoints = (x) => new Phaser.Point(x * len, 0);
+    const setAxisYAnim = (elm, idx) => elm.y = Math.sin( idx * 0.5 + count ) * 2;
+    const points = R.map(createPoints, R.range(0, 10));
 
-    let rope = game.add.rope(100, 100, 'thread', null, points);
+    rope = game.add.rope(100, 100, 'thread', null, points);
     rope.scale.setTo(1, 1);
+    mapIndexed(setAxisYAnim, points);
 
-    rope.updateAnimation = function() {
+    rope.updateAnimation = () => {
       count += 0.1;
-
-      for (let i = 0; i < this.points.length; i++)
-      {
-        this.points[i].y = Math.sin(i * 0.5 + count) * 2;
-      }
+      mapIndexed(setAxisYAnim, points);
     };
   };
 
-  // draw node
-  const drawNode = (x, y) => {
-    let node = game.add.sprite(x, y, "node", 0);
-    node.scale.set(1);
-    node.anchor.set(0.5);
-  };
-
   const create = () => {
-    // random generator
-    const randMinMax = (min, max) => game.rnd.integerInRange(min, max);
+    let ground, floorScale;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.stage.backgroundColor = '#333333';
@@ -133,9 +140,9 @@
     drawWeb(100, drawNode);
 
     // 5 is height of floor.svg
-    let ground = platforms.create(0, window.innerHeight - 5, "floor");
+    ground = platforms.create(0, window.innerHeight - 5, "floor");
     // 100 is width of floor.svg
-    let floorScale = window.innerWidth / 100;
+    floorScale = window.innerWidth / 100;
 
     ground.scale.setTo(floorScale, 1);
     ground.body.immovable = true;
@@ -149,20 +156,22 @@
 
     chinti.body.velocity.x = 0;
 
-    if (cursors.left.isDown)
-    {
-      chinti.body.velocity.x = -150;
-      chinti.animations.play('left');
-    }
-    else if (cursors.right.isDown)
-    {
-      chinti.body.velocity.x = 150;
-      chinti.animations.play('right');
-    }
-    else
-    {
+    const moveChinti = (value, side) => {
+      chinti.body.velocity.x = value;
+      chinti.animations.play(side);
+    };
+
+    const stopChintiAnim = () => {
       chinti.animations.stop();
       chinti.frame = 4;
+    };
+
+    if (cursors.left.isDown) {
+      moveChinti(-150, 'left');
+    } else if (cursors.right.isDown) {
+      moveChinti(150, 'right');
+    } else {
+      stopChintiAnim();
     }
 
     if (cursors.up.isDown && chinti.body.touching.down || spacebar.isDown)
@@ -188,5 +197,4 @@
       render: render
     }
   );
-
 }());

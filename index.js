@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require('express');
+const R = require('ramda');
 const path = require('path');
 const web = express();
 const data = { page: 'Just another game' };
