@@ -1,56 +1,18 @@
 (function () {
-  let chinti,
-      cursors,
-      spacebar,
-      line,
-      thread,
-      platforms;
+  'use strict';
 
-  /**
-   * Return random integer
-   *
-   * @this {Window}
-   * @params {number} min - from minimum
-   * @params {number} max - to maximum
-   * @return {number} random number
-   */
-
-  const randMinMax = (min, max) => game.rnd.integerInRange(min, max);
-  const mapIndexed = R.addIndex(R.map); // can use index in func
-
-  /**
-   * New game object node
-   *
-   * @this {Window}
-   * @params {number} x - coordinate on axis x
-   * @params {number} y - coordinate on axis y
-   */
-
-  const drawNode = (x, y) => {
-    let node = game.add.sprite(x, y, "node", 0);
-    node.scale.set(1);
-    node.anchor.set(0.5);
-
-    return node;
-  };
+  let concrete, cursors, chinti;
 
   const preload = () => {
-    game.load.spritesheet("node", "assets/img/node.svg", 15, 15);
-    game.load.image("thread", "assets/img/web.svg");
-    game.load.image("floor", "assets/img/floor.svg");
+    game.load.image('background', 'assets/img/concrete.png');
+    game.load.image('thread', 'assets/img/thread.svg', 150, 3);
+    game.load.image('node', 'assets/img/node.svg', 15, 15);
     game.load.spritesheet('chinti', 'assets/img/dude.svg', 32, 48);
-  };
-
-  const fromDoc = () => {
-    //game.world.randomY
-    //game.world.randomX
-    //game.world.centerX
-    //game.world.centerY
   };
 
   const sinus = (deg) => Math.sin(deg);
 
-  const drawWeb = (len, fn) => {
+  const createWeb = (len, fn) => {
     let vertices = new Array(len), i, x, y;
     let graphics = game.add.graphics();
 
@@ -87,147 +49,214 @@
 
       --i;
       bmd.ctx.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-      fn(vertices[triangles[i]][0], vertices[triangles[i]][1]);
       points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
 
       --i;
       bmd.ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-      fn(vertices[triangles[i]][0], vertices[triangles[i]][1]);
       points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
 
       --i;
       bmd.ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-      fn(vertices[triangles[i]][0], vertices[triangles[i]][1]);
       points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
 
       bmd.ctx.closePath();
       bmd.ctx.stroke();
     }
 
+    points = R.uniq(points);
+
     console.log(points);
 
     for (let j = 0; j < points.length; j++)
     {
+      //fn(points[j].x, points[j].y);
+
       if (j !== points.length - 1)
       {
         let angle = Math.atan2(points[j+1].y - points[j].y, points[j+1].x - points[j].x ) * 180 / Math.PI;
-        drawRope(points[j].x, points[j].y, angle, Math.sqrt( Math.pow(points[j+1].x - points[j].x, 2) + Math.pow(points[j+1].y - points[j].y, 2) ));
+        createRope(points[j].x, points[j].y, points[j+1].x, points[j+1].y);
+        //createRope(10, points[j].x, points[j].y);
+        //drawRope(points[j].x, points[j].y, angle, Math.sqrt( Math.pow(points[j+1].x - points[j].x, 2) + Math.pow(points[j+1].y - points[j].y, 2) ));
+        //console.log(Math.sqrt( Math.pow(points[j+1].x - points[j].x, 2) + Math.pow(points[j+1].y - points[j].y, 2) ));
+
       }
       else
       {
-        let angle = Math.atan2(points[0].y - points[j].y, points[0].x - points[j].x ) * 180 / Math.PI;
-        drawRope(points[j].x, points[j].y, angle,  Math.sqrt( Math.pow(points[0].x - points[j].x, 2) + Math.pow(points[0].y - points[j].y, 2) ) );
+        createRope(points[j].x, points[j].y, points[0].x, points[0].y);
+        //createRope(10, points[j].x, points[j].y);
+        //let angle = Math.atan2(points[j].y - points[j-1].y, points[j].x - points[j-1].x ) * 180 / Math.PI;
+        //drawRope(points[j].x, points[j].y, angle,  Math.sqrt( Math.pow(points[j].x - points[j-1].x, 2) + Math.pow(points[j].y - points[j-1].y, 2) ) );
       }
     }
   };
 
-  // draw Rope
-  const drawRope = (x, y, angle, distance) => {
-    let count = 0;
-    // 150 is width of assets/img/web.svg aka thread
-    let len = 150 / 10;
-    let rope;
+  const player = () => {
+    const obj = game.add.sprite(100, 100, 'chinti');
+    obj.scale.set(1);
+    obj.smoothed = false;
+    obj.animations.add('left', [0, 1, 2, 3], 10, true);
+    obj.animations.add('right', [5, 6, 7, 8], 10, true);
 
-    const createPoints = (x) => new Phaser.Point(x * len, 0);
-    const setAxisYAnim = (elm, idx) => elm.y = Math.sin( idx * 1.5 + count ) * 2;
-    const points = R.map(createPoints, R.range(0, 10));
-
-    rope = game.add.rope(x, y, 'thread', null, points);
-
-    if (angle !== undefined)
-    {
-      rope.angle = angle;
-    }
-
-    if (distance !== undefined)
-    {
-      rope.scale.setTo(distance/136, 0.5);
-    }
-    else
-    {
-      rope.scale.setTo(1, 1);
-    }
-
-    mapIndexed(setAxisYAnim, points);
-
-    rope.updateAnimation = () => {
-      count += 0.1;
-      mapIndexed(setAxisYAnim, points);
-    };
+    return obj;
   };
 
   const create = () => {
-    let ground, floorScale;
+    let worldConfig = {
+      w: window.innerWidth,
+      h: window.innerHeight
+    };
 
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-    game.stage.backgroundColor = '#333333';
+    // World size
+    game.world.setBounds(0, 0, worldConfig.w, worldConfig.h);
+    game.add.tileSprite(0, 0, worldConfig.w, worldConfig.h, 'background');
 
-    chinti = game.add.sprite(0, game.world.height - 100, 'chinti');
-    chinti.scale.setTo(.8, .8);
-    chinti.animations.add('left', [0, 1, 2, 3], 10, true);
-    chinti.animations.add('right', [5, 6, 7, 8], 10, true);
+    // Enable P2 and it will use the updated world size
+    game.physics.startSystem(Phaser.Physics.P2JS);
+    game.physics.p2.gravity.y = 10;
 
-    game.physics.arcade.enable(chinti);
+    chinti = player();
+    game.physics.p2.enable(chinti, false);
 
-    chinti.body.bounce.y = 0.3;
-    chinti.body.gravity.y = 300;
-    chinti.body.collideWorldBounds = true;
+    createWeb(3);
 
-    platforms = game.add.group();
-    platforms.enableBody = true;
-
-    drawWeb(10, drawNode);
-
-    // 5 is height of floor.svg
-    ground = platforms.create(0, window.innerHeight - 5, "floor");
-    // 100 is width of floor.svg
-    floorScale = window.innerWidth / 100;
-
-    ground.scale.setTo(floorScale, 1);
-    ground.body.immovable = true;
+    cursors = game.input.keyboard.createCursorKeys();
   };
 
   const update = () => {
-    let hitPlatform = game.physics.arcade.collide(chinti, platforms);
-
-    cursors = game.input.keyboard.createCursorKeys();
-    spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-
     chinti.body.velocity.x = 0;
-
-    const moveChinti = (value, side) => {
-      chinti.body.velocity.x = value;
-      chinti.animations.play(side);
-    };
 
     const stopChintiAnim = () => {
       chinti.animations.stop();
       chinti.frame = 4;
     };
 
+    chinti.body.setZeroVelocity();
+
     if (cursors.left.isDown)
     {
-      moveChinti(-150, 'left');
+      chinti.body.moveLeft(100);
+      chinti.animations.play("left");
     }
     else if (cursors.right.isDown)
     {
-      moveChinti(150, 'right');
+      chinti.body.moveRight(100);
+      chinti.animations.play("right");
     }
     else
     {
       stopChintiAnim();
     }
 
-    if (cursors.up.isDown && chinti.body.touching.down || spacebar.isDown)
+    if (cursors.up.isDown)
     {
-      chinti.body.velocity.y = -250;
+      chinti.body.moveUp(100);
     }
+    else if (cursors.down.isDown)
+    {
+      chinti.body.moveDown(100);
+    }
+
   };
 
-  const render = () => {
-    //game.debug.geom(line);
-    //game.debug.lineInfo(line, 32, 32);
+  const enableP2phys = arr => R.map((e) => game.physics.p2.enable(e, false), arr);
+  const makeStatic = arr => R.map((e) => e.body.static = true, arr);
+  const distanceBetweenPoints = (x1, y1, x2, y2) => Math.sqrt( Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) );
+  const vectorAngle = (x1, y1, x2, y2) => Math.atan2(y2 - y1, x2 - x1 ) * 180 / Math.PI;
+  const addSpite = (x, y, name) => game.add.sprite(x, y, name);
+
+  const createRope = (startX, startY, endX, endY) => {
+    let start = addSpite(startX, startY, "node");
+    let end   = addSpite(endX, endY, "node");
+    let force = 20000;
+
+    enableP2phys([start, end]);
+    makeStatic([start, end]);
+
+    const dist = distanceBetweenPoints(endX, startX, endY, startY);
+    const ceil = Math.ceil( R.divide(dist, 20) );
+
+    //console.log( vectorAngle(startX, startY, endX, endY) );
+
+    let cntPntsX = Math.ceil( (endX-startX) / 15 );
+    let disPntsX = (endX-startX) / cntPntsX;
+    let disPntsY = (endY-startY) / cntPntsX;
+
+    console.log(disPntsY);
+
+    for (let x = 0; x < cntPntsX; x++)
+    {
+      let posY = (startY + disPntsY * x) - 7.5;
+      let posX = (startX + disPntsX * x) - 7.5;
+
+      let spt = addSpite(posX, posY, "node");
+
+      game.physics.p2.enable(spt, false);
+      spt.body.setRectangle(15, 15);
+
+      game.physics.p2.createRevoluteConstraint(spt, [0, 0], end, [0, 0], force);
+      game.physics.p2.createRevoluteConstraint(spt, [0, 0], start, [0, 0], force);
+
+      start.bringToTop();
+      end.bringToTop();
+    }
+
+    const fillSpace = () => {
+
+    };
   };
+
+  /*
+    let newRect;
+    const createRope = (length, xAnchor, yAnchor) => {
+    let lastRect,
+    height = 15,        //  Height for the physics body - your image height is 30px
+    width = 15,         //  This is the width for the physics body. If too small the rectangles will get scrambled together.
+    maxForce = 100;   //  The force that holds the rectangles together.
+
+    for (let i = 0; i <= length; i++)
+    {
+    var x = xAnchor;                    //  All rects are on the same x position
+    var y = yAnchor + (i * height);     //  Every new rect is positioned below the last
+
+    if (i % 2 === 0)
+    {
+    //  Add sprite (and switch frame every 2nd time)
+    newRect = game.add.sprite(x, y, 'node', 1);
+    }
+    else
+    {
+    newRect = game.add.sprite(x, y, 'node', 0);
+    lastRect.bringToTop();
+    }
+
+    //  Enable physicsbody
+    game.physics.p2.enable(newRect, false);
+
+    //  Set custom rectangle
+    newRect.body.setRectangle(width, height);
+
+    if (i === 0 || i === length)
+    {
+    newRect.body.static = true;
+    }
+    else
+    {
+    //  Anchor the first one created
+    newRect.body.velocity.x = 1;      //  Give it a push :) just for fun
+    newRect.body.mass = length / i;     //  Reduce mass for evey rope element
+    }
+
+    //  After the first rectangle is created we can add the constraint
+    if (lastRect)
+    {
+    game.physics.p2.createRevoluteConstraint(newRect, [0, -10], lastRect, [0, 10], maxForce);
+    }
+
+    lastRect = newRect;
+    newRect.body.angle = -90;
+    }
+    };
+  */
 
   const game = new Phaser.Game(
     window.innerWidth,
@@ -237,8 +266,7 @@
     {
       preload: preload,
       create: create,
-      update: update,
-      render: render
+      update: update
     }
   );
 }());
