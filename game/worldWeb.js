@@ -10,14 +10,15 @@ const preload = () => {
 };
 
 const create = () => {
-  let w = window.innerWidth;
-  let h = window.innerHeight;
-
-  game.world.setBounds(0, 0, w, h);
-  game.add.tileSprite(0, 0, w, h, 'background');
-
-  game.physics.startSystem(Phaser.Physics.P2JS);
-  game.physics.p2.gravity.y = 10;
+  createWorld(game, {
+    size: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    background: 'background',
+    startSystem: Phaser.Physics.P2JS,
+    p2GravityY: 10
+  });
 
   chinti = player(game, {
     x: 100,
@@ -41,14 +42,12 @@ const create = () => {
     smoothed: false
   });
 
-  enableP2phys([chinti], game);
+  enableP2phys(game, [chinti]);
   cursors = game.input.keyboard.createCursorKeys();
 };
 
 const update = () => {
   chinti.body.velocity.x = 0;
-
-
   chinti.body.setZeroVelocity();
 
   if (cursors.left.isDown)
