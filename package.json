@@ -18,6 +18,8 @@
   "homepage": "https://github.com/nthiic/nthiic#readme",
   "dependencies": {
     "express": "^4.16.2",
+    "jade": "^1.11.0",
+    "phaser": "^2.6.2",
     "ramda": "^0.25.0"
   }
 }
