@@ -47,32 +47,31 @@ const create = () => {
 };
 
 const update = () => {
-  chinti.body.velocity.x = 0;
-  chinti.body.setZeroVelocity();
-
-  if (cursors.left.isDown)
-  {
-    chinti.body.moveLeft(100);
-    chinti.animations.play("left");
-  }
-  else if (cursors.right.isDown)
-  {
-    chinti.body.moveRight(100);
-    chinti.animations.play("right");
-  }
-  else
-  {
-    stopPlayerAnim(chinti, 4);
-  }
-
-  if (cursors.up.isDown)
-  {
-    chinti.body.moveUp(100);
-  }
-  else if (cursors.down.isDown)
-  {
-    chinti.body.moveDown(100);
-  }
+  playerMovements(chinti, cursors, {
+    velocity: {
+      x: 0,
+      y: 0
+    },
+    moves: {
+      left: {
+        step: 100,
+        anim: 'left'
+      },
+      right: {
+        step: 100,
+        anim: 'right'
+      },
+      up: {
+        step: 100,
+        anim: ''
+      },
+      down: {
+        step: 100,
+        anim: ''
+      }
+    },
+    stopFrame: 4
+  });
 };
 
 const game = new Phaser.Game(
