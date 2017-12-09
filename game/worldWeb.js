@@ -19,19 +19,35 @@ const create = () => {
   game.physics.startSystem(Phaser.Physics.P2JS);
   game.physics.p2.gravity.y = 10;
 
-  chinti = player(game);
-  enableP2phys([chinti], game);
+  chinti = player(game, {
+    x: 100,
+    y: 100,
+    name: 'chinti',
+    scale: 1,
+    animations: {
+      left: {
+        name: 'left',
+        frames: [0, 1, 2, 3],
+        frameRate: 10,
+        loop: true
+      },
+      right: {
+        name: 'right',
+        frames: [5, 6, 7, 8],
+        frameRate: 10,
+        loop: true
+      }
+    },
+    smoothed: false
+  });
 
+  enableP2phys([chinti], game);
   cursors = game.input.keyboard.createCursorKeys();
 };
 
 const update = () => {
   chinti.body.velocity.x = 0;
 
-  const stopChintiAnim = () => {
-    chinti.animations.stop();
-    chinti.frame = 4;
-  };
 
   chinti.body.setZeroVelocity();
 
@@ -47,7 +63,7 @@ const update = () => {
   }
   else
   {
-    stopChintiAnim();
+    stopPlayerAnim(chinti, 4);
   }
 
   if (cursors.up.isDown)
