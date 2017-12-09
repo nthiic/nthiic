@@ -42,6 +42,9 @@ const create = () => {
     smoothed: false
   });
 
+  let ppt = getArrPoints(game, 5);
+  console.log(ppt);
+
   enableP2phys(game, [chinti]);
   cursors = game.input.keyboard.createCursorKeys();
 };

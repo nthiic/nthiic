@@ -32,17 +32,45 @@ const player = (game, conf) => {
   return chinti;
 };
 
-const stopPlayerAnim = (player, stopFrame) => {
-  player.animations.stop();
-  player.frame = stopFrame;
-};
-
 const createWorld = (game, conf) => {
   game.world.setBounds(0, 0, conf.size.width, conf.size.height);
   game.add.tileSprite(0, 0, conf.size.width, conf.size.height, conf.background);
 
   game.physics.startSystem(conf.startSystem);
   game.physics.p2.gravity.y = conf.p2GravityY;
+};
+
+const getArrPoints = (game, len) => {
+  let vertices, points, triangles, i, x, y;
+
+  vertices = new Array(len);
+  for (i = vertices.length; i--;)
+  {
+    do
+    {
+      x = Math.random() - 0.25;
+      y = Math.random() - 0.25;
+    } while (x * x + y * y > 0.25);
+
+    x = game.width  * ( x * sinus(360) + 0.5  );
+    y = game.height * ( y * sinus(360) + 0.5  );
+
+    vertices[i] = [x, y];
+  }
+
+  triangles = Delaunay.triangulate(vertices);
+  points = new Array();
+  for (i = triangles.length; i;)
+  {
+    --i;
+    points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
+    --i;
+    points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
+    --i;
+    points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
+  }
+
+  return points;
 };
 
 const playerMovements = (player, cursors, conf) => {
@@ -65,7 +93,8 @@ const playerMovements = (player, cursors, conf) => {
     player.body.moveDown(conf.moves.down.step);
     break;
   default:
-    stopPlayerAnim(player, conf.stopFrame);
+    player.animations.stop();
+    player.frame = conf.stopFrame;
     break;
   };
 };

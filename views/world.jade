@@ -11,5 +11,6 @@ html(lang="ru")
     script(src="/scripts/pixi.min.js")
     script(src="/scripts/p2.min.js")
     script(src="/scripts/phaser-creature.min.js")
-    each src in scripts
-      script(src="/scripts/" + src)
+    - for (let i = 0; i < scripts.length; i++ ) {
+      script(src="/scripts/" + scripts[i])
+    - }
