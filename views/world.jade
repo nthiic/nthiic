@@ -1,7 +1,7 @@
 doctype
 html(lang="ru")
   head
-    title= worldName
+    title= title
     meta(charset="utf-8")
     meta(name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0")
     style(type="text/css").
@@ -11,5 +11,5 @@ html(lang="ru")
     script(src="/scripts/pixi.min.js")
     script(src="/scripts/p2.min.js")
     script(src="/scripts/phaser-creature.min.js")
-    script(src="/scripts/WorldWeb.js")
-    script(src="/scripts/worldWeb.js")
+    each src in scripts
+      script(src="/scripts/" + src)
