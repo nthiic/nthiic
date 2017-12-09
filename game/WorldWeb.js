@@ -44,3 +44,28 @@ const createWorld = (game, conf) => {
   game.physics.startSystem(conf.startSystem);
   game.physics.p2.gravity.y = conf.p2GravityY;
 };
+
+const playerMovements = (player, cursors, conf) => {
+  player.body.velocity.x = conf.velocityX;
+  player.body.setZeroVelocity();
+
+  switch(true) {
+  case cursors.left.isDown:
+    player.body.moveLeft(conf.moves.left.step);
+    player.animations.play(conf.moves.left.anim);
+    break;
+  case cursors.right.isDown:
+    player.body.moveRight(conf.moves.right.step);
+    player.animations.play(conf.moves.right.anim);
+    break;
+  case cursors.up.isDown:
+    player.body.moveUp(conf.moves.up.step);
+    break;
+  case cursors.down.isDown:
+    player.body.moveDown(conf.moves.down.step);
+    break;
+  default:
+    stopPlayerAnim(player, conf.stopFrame);
+    break;
+  };
+};
