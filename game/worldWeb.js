@@ -43,7 +43,7 @@ const create = () => {
     smoothed: false
   });
 
-  const net = createArrPoints(game, 3);
+  const net = createArrPoints(game, 100);
 
   createNode(game, {
     points: net,
