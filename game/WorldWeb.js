@@ -2,14 +2,6 @@
 
 const sinus = (deg) => Math.sin(deg);
 
-const enableP2phys = (game, arr) => {
-  return R.map((object) => game.physics.p2.enable(object, false), arr);
-};
-
-const makeStatic = arr => {
-  return R.map((object) => object.body.static = true, arr);
-};
-
 const distanceBetweenPoints = (x1, y1, x2, y2) => {
   return Math.sqrt( Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) );
 };
@@ -40,7 +32,7 @@ const createWorld = (game, conf) => {
   game.physics.p2.gravity.y = conf.p2GravityY;
 };
 
-const getArrPoints = (game, len) => {
+const createArrPoints = (game, len) => {
   let vertices, points, triangles, i, x, y;
 
   vertices = new Array(len);
@@ -48,8 +40,8 @@ const getArrPoints = (game, len) => {
   {
     do
     {
-      x = Math.random() - 0.25;
-      y = Math.random() - 0.25;
+      x = Math.random() - 0.5;
+      y = Math.random() - 0.5;
     } while (x * x + y * y > 0.25);
 
     x = game.width  * ( x * sinus(360) + 0.5  );
@@ -62,15 +54,59 @@ const getArrPoints = (game, len) => {
   points = new Array();
   for (i = triangles.length; i;)
   {
-    --i;
-    points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
-    --i;
-    points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
-    --i;
-    points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
+    --i; points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
+    --i; points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
+    --i; points.push({x: vertices[triangles[i]][0], y:vertices[triangles[i]][1] });
   }
 
   return points;
+};
+
+const createNode = (game, conf) => {
+  R.map( obj => {
+    let sprite = game.add.sprite(obj.x, obj.y, conf.sprite);
+    game.physics.p2.enable(sprite, false);
+
+    sprite.body.static = true;
+  })(R.uniq(conf.points));
+};
+
+const createRope = (game, startX, startY, endX, endY) => {
+  let start = game.add.sprite(startX, startY, 'bead'),
+      end   = game.add.sprite(endX, endY, 'bead'),
+      force = 20000;
+
+  game.physics.p2.enable(start, false);
+  game.physics.p2.enable(end, false);
+
+  start.body.static = true;
+  end.body.static   = true;
+
+  let dist     = distanceBetweenPoints(endX, startX, endY, startY),
+      ceil     = Math.ceil( dist / 6 ),
+      cntPntsX = Math.ceil( (endX-startX) / 6 ),
+      disPntsX = (endX-startX) / cntPntsX,
+      disPntsY = (endY-startY) / cntPntsX;
+
+  console.log(
+    "dist:%s ceil:%s cntPntsX:%s disPntsX:%s disPntsY:%s",
+    dist, ceil, cntPntsX, disPntsX, disPntsY);
+
+  for (let x = 0; x < cntPntsX; x++)
+  {
+    let posY = (startY + disPntsY * x);
+    let posX = (startX + disPntsX * x);
+    let sprite = addSpite(game, posX, posY, 'bead');
+
+    game.physics.p2.enable(sprite, false);
+    sprite.body.setRectangle(6, 6);
+    sprite.body.static = true;
+
+    game.physics.p2.createRevoluteConstraint(sprite, [0, 0], end, [0, 0], force);
+    game.physics.p2.createRevoluteConstraint(sprite, [0, 0], start, [0, 0], force);
+
+    start.bringToTop();
+  }
 };
 
 const playerMovements = (player, cursors, conf) => {

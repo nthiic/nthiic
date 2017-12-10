@@ -6,6 +6,7 @@ const preload = () => {
   game.load.image('background', '/public/img/concrete.png');
   game.load.image('thread', '/public/img/thread.svg', 150, 3);
   game.load.image('node', '/public/img/node.svg', 15, 15);
+  game.load.image('bead', '/public/img/bead.svg', 6, 6);
   game.load.spritesheet('chinti', '/public/img/dude.svg', 32, 48);
 };
 
@@ -42,10 +43,32 @@ const create = () => {
     smoothed: false
   });
 
-  let ppt = getArrPoints(game, 5);
-  console.log(ppt);
+  const net = createArrPoints(game, 3);
 
-  enableP2phys(game, [chinti]);
+  createNode(game, {
+    points: net,
+    sprite: 'node'
+  });
+
+  for (let i = 0; i < net.length; i++)
+  {
+    let nextX, nextY;
+
+    if (net[i + 1] === undefined)
+    {
+      nextX = net[0].x;
+      nextY = net[0].y;
+    }
+    else
+    {
+      nextX = net[i + 1].x;
+      nextY = net[i + 1].y;
+    }
+
+    createRope(game, net[i].x, net[i].y, nextX, nextY);
+  }
+
+  game.physics.p2.enable(chinti, false);
   cursors = game.input.keyboard.createCursorKeys();
 };
 
