@@ -84,19 +84,20 @@ const createRope = (game, startX, startY, endX, endY) => {
 
   let dist     = distanceBetweenPoints(endX, startX, endY, startY),
       ceil     = Math.ceil( dist / 6 ),
-      cntPntsX = Math.ceil( (endX-startX) / 6 ),
+      cntPntsX = Math.ceil( Math.abs(endX - startX) / 6 ),
       disPntsX = (endX-startX) / cntPntsX,
       disPntsY = (endY-startY) / cntPntsX;
 
   console.log(
     "dist:%s ceil:%s cntPntsX:%s disPntsX:%s disPntsY:%s",
-    dist, ceil, cntPntsX, disPntsX, disPntsY);
+    dist, ceil, cntPntsX, disPntsX, disPntsY
+  );
 
   for (let x = 0; x < cntPntsX; x++)
   {
-    let posY = (startY + disPntsY * x);
-    let posX = (startX + disPntsX * x);
-    let sprite = addSpite(game, posX, posY, 'bead');
+    let posY   = (startY + disPntsY * x);
+    let posX   = (startX + disPntsX * x);
+    let sprite = game.add.sprite(posX, posY, 'bead');
 
     game.physics.p2.enable(sprite, false);
     sprite.body.setRectangle(6, 6);

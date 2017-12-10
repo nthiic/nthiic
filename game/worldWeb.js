@@ -65,6 +65,7 @@ const create = () => {
       nextY = net[i + 1].y;
     }
 
+    console.log(net[i].x, net[i].y, nextX, nextY);
     createRope(game, net[i].x, net[i].y, nextX, nextY);
   }
 
