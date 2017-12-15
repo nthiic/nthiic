@@ -37,7 +37,7 @@ Dude.prototype = {
 	A_SPEED : 0.1,
 	RADUIS : 8,
 	FOV : 60,
-	PAW_LEN : 35,
+	PAW_LEN : 30,
 	
 	constructor : Dude,
 	canvas : '',
@@ -102,9 +102,14 @@ Dude.prototype = {
 					tips.push(new Point(this.head.x + i * this.kx, this.head.y - i * this.ky));
 				} */
 				toCollide = this.checkCollisionCourse(tips, env);
-				if(toCollide){
-					this.ctx.strokeStyle = "#ff0000";
-					this.tmpAngle -= this.A_SPEED;				
+				switch(toCollide){					
+					case 'rear':
+					case 'mid':
+					case 'front'://other turn direction? right-left
+					case 'sensors':
+						this.ctx.strokeStyle = "#ff0000";
+						this.tmpAngle -= this.A_SPEED;
+					break;
 				}
 				if(!toCollide && this.tmpAngle !== this.angle){
 					if(Math.abs(this.tmpAngle - this.angle) < this.A_SPEED){
@@ -162,9 +167,20 @@ Dude.prototype = {
 	},
 	checkCollisionCourse : function(tips, env){
 		for(var k in env){
-			for(var t in tips){
+			for(var t = 0; t < tips.length; t++){
+				var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
 				if(pointCircleCollision(tips[t], env[k])){
-					return true;
+					if(t >= tips.length - 2){
+						//rear
+						return 'rear';
+					}else if(t >= tips.length - 4){
+						//mid
+						return 'mid';
+					}else if(t >= tips.length - 6){
+						//front legs
+						return 'front';
+					}					
+					return 'sensors';
 				}
 			}
 		}
@@ -220,7 +236,7 @@ function renderAll(){
 document.getElementById('canvas').addEventListener('click', function (event) {
 	var clickPoint = new Point(event.offsetX, event.offsetY);
 	if(event.ctrlKey){//add obstacle
-		var obst = new Obstacle(clickPoint.x, clickPoint.y, Math.floor(Math.random() * 10 + 30));
+		var obst = new Obstacle(clickPoint.x, clickPoint.y, Math.floor(Math.random() * 1 + 17));
 		obstacles[obst.uid] = obst;
 		console.log('added', obst);
 	}else if(event.shiftKey){//kill obstacle
@@ -259,3 +275,56 @@ function pointCircleCollision(point, circle) {
     return dx * dx + dy * dy <= circle.radius * circle.radius;
 }
 
+/* function lineCircleCollide(a, b, circle, radius, nearest) {
+    //check to see if start or end points lie within circle 
+    if (pointCircleCollide(a, circle, radius)) {
+        if (nearest) {
+            nearest[0] = a[0]
+            nearest[1] = a[1]
+        }
+        return true
+    } if (pointCircleCollide(b, circle, radius)) {
+        if (nearest) {
+            nearest[0] = b[0]
+            nearest[1] = b[1]
+        }
+        return true
+    }
+    
+    var x1 = a[0],
+        y1 = a[1],
+        x2 = b[0],
+        y2 = b[1],
+        cx = circle[0],
+        cy = circle[1]
+
+    //vector d
+    var dx = x2 - x1
+    var dy = y2 - y1
+    
+    //vector lc
+    var lcx = cx - x1
+    var lcy = cy - y1
+    
+    //project lc onto d, resulting in vector p
+    var dLen2 = dx * dx + dy * dy //len2 of d
+    var px = dx
+    var py = dy
+    if (dLen2 > 0) {
+        var dp = (lcx * dx + lcy * dy) / dLen2
+        px *= dp
+        py *= dp
+    }
+    
+    if (!nearest)
+        nearest = tmp
+    nearest[0] = x1 + px
+    nearest[1] = y1 + py
+    
+    //len2 of p
+    var pLen2 = px * px + py * py
+    
+    //check collision
+    return pointCircleCollide(nearest, circle, radius)
+            && pLen2 <= dLen2 && (px * dx + py * dy) >= 0
+} */
