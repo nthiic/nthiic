@@ -37,6 +37,7 @@ Dude.prototype = {
 	A_SPEED : 0.1,
 	RADUIS : 8,
 	FOV : 60,
+	PAW_LEN : 35,
 	
 	constructor : Dude,
 	canvas : '',
@@ -79,11 +80,24 @@ Dude.prototype = {
 				//check collision course				
 				this.ctx.lineWidth = 2;
 				this.ctx.strokeStyle = "#ff00ff";
-				
-				var tip = new Point(this.head.x + this.FOV * this.kx, this.head.y + this.FOV * this.ky);
-				var tip1 = new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle + 0.2), this.head.y - this.FOV * Math.sin(this.tmpAngle + 0.2));
-				var tip2 = new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle - 0.2), this.head.y - this.FOV * Math.sin(this.tmpAngle - 0.2));
-				var tips = [tip, tip1, tip2];
+				var pawPI = Math.PI / 2;
+				var tips = [
+						new Point(this.head.x + this.FOV * this.kx, this.head.y + this.FOV * this.ky),
+						new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle + 0.2), this.head.y - this.FOV * Math.sin(this.tmpAngle + 0.2)),
+						new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle - 0.2), this.head.y - this.FOV * Math.sin(this.tmpAngle - 0.2)),
+						
+						new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle + 0.4), this.head.y - this.FOV * Math.sin(this.tmpAngle + 0.4)),
+						new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle - 0.4), this.head.y - this.FOV * Math.sin(this.tmpAngle - 0.4)),
+						///////////////paws?
+						new Point(this.head.x + this.PAW_LEN * Math.cos(this.tmpAngle + pawPI), this.head.y - this.PAW_LEN * Math.sin(this.tmpAngle + pawPI)),
+						new Point(this.head.x + this.PAW_LEN * Math.cos(this.tmpAngle - pawPI), this.head.y - this.PAW_LEN * Math.sin(this.tmpAngle - pawPI)),
+						
+						new Point(this.body.x + this.PAW_LEN * Math.cos(this.tmpAngle + pawPI), this.body.y - this.PAW_LEN * Math.sin(this.tmpAngle + pawPI)),
+						new Point(this.body.x + this.PAW_LEN * Math.cos(this.tmpAngle - pawPI), this.body.y - this.PAW_LEN * Math.sin(this.tmpAngle - pawPI)),
+						
+						new Point(this.tail.x + this.PAW_LEN * Math.cos(this.tmpAngle + pawPI), this.tail.y - this.PAW_LEN * Math.sin(this.tmpAngle + pawPI)),
+						new Point(this.tail.x + this.PAW_LEN * Math.cos(this.tmpAngle - pawPI), this.tail.y - this.PAW_LEN * Math.sin(this.tmpAngle - pawPI))
+					];
 				/* for(var i = this.RADUIS; i <= this.FOV; i += 1){
 					tips.push(new Point(this.head.x + i * this.kx, this.head.y - i * this.ky));
 				} */
@@ -92,7 +106,7 @@ Dude.prototype = {
 					this.ctx.strokeStyle = "#ff0000";
 					this.tmpAngle -= this.A_SPEED;				
 				}
-				if(!toCollide && this.tmpAngle != this.angle){
+				if(!toCollide && this.tmpAngle !== this.angle){
 					if(Math.abs(this.tmpAngle - this.angle) < this.A_SPEED){
 						this.resetCourse();
 					}else{
@@ -103,8 +117,9 @@ Dude.prototype = {
 				this.ky = -Math.sin(this.tmpAngle);
 				// Draw the angle - debug
 				this.ctx.beginPath();
-				for(var t in tips){
-					this.ctx.moveTo(this.head.x, this.head.y);
+				for(var t = 0; t < tips.length; t++){
+					var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
+					this.ctx.moveTo(start.x, start.y);
 					this.ctx.lineTo(tips[t].x, tips[t].y);
 				}
 				this.ctx.stroke();
