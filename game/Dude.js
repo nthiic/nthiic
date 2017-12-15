@@ -81,7 +81,9 @@ Dude.prototype = {
 				this.ctx.strokeStyle = "#ff00ff";
 				
 				var tip = new Point(this.head.x + this.FOV * this.kx, this.head.y + this.FOV * this.ky);
-				var tips = [tip];
+				var tip1 = new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle + 0.2), this.head.y - this.FOV * Math.sin(this.tmpAngle + 0.2));
+				var tip2 = new Point(this.head.x + this.FOV * Math.cos(this.tmpAngle - 0.2), this.head.y - this.FOV * Math.sin(this.tmpAngle - 0.2));
+				var tips = [tip, tip1, tip2];
 				/* for(var i = this.RADUIS; i <= this.FOV; i += 1){
 					tips.push(new Point(this.head.x + i * this.kx, this.head.y - i * this.ky));
 				} */
@@ -101,8 +103,10 @@ Dude.prototype = {
 				this.ky = -Math.sin(this.tmpAngle);
 				// Draw the angle - debug
 				this.ctx.beginPath();
-				this.ctx.moveTo(this.head.x, this.head.y);
-				this.ctx.lineTo(tip.x, tip.y);
+				for(var t in tips){
+					this.ctx.moveTo(this.head.x, this.head.y);
+					this.ctx.lineTo(tips[t].x, tips[t].y);
+				}
 				this.ctx.stroke();
 			}
 			
