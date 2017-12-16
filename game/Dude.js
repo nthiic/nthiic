@@ -169,7 +169,8 @@ Dude.prototype = {
 		for(var k in env){
 			for(var t = 0; t < tips.length; t++){
 				var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
-				if(pointCircleCollision(tips[t], env[k])){
+				// if(pointCircleCollision(tips[t], env[k])){
+				if(lineCircleCollide(start, tips[t], env[k])){
 					if(t >= tips.length - 2){
 						//rear
 						return 'rear';
@@ -275,28 +276,20 @@ function pointCircleCollision(point, circle) {
     return dx * dx + dy * dy <= circle.radius * circle.radius;
 }
 
-/* function lineCircleCollide(a, b, circle, radius, nearest) {
+function lineCircleCollide(a, b, circle) {
     //check to see if start or end points lie within circle 
-    if (pointCircleCollide(a, circle, radius)) {
-        if (nearest) {
-            nearest[0] = a[0]
-            nearest[1] = a[1]
-        }
+    if (pointCircleCollision(a, circle)) {        
         return true
-    } if (pointCircleCollide(b, circle, radius)) {
-        if (nearest) {
-            nearest[0] = b[0]
-            nearest[1] = b[1]
-        }
+    } if (pointCircleCollision(b, circle)) {        
         return true
     }
     
-    var x1 = a[0],
-        y1 = a[1],
-        x2 = b[0],
-        y2 = b[1],
-        cx = circle[0],
-        cy = circle[1]
+    var x1 = a.x,
+        y1 = a.y,
+        x2 = b.x,
+        y2 = b.y,
+        cx = circle.x,
+        cy = circle.y
 
     //vector d
     var dx = x2 - x1
@@ -316,15 +309,12 @@ function pointCircleCollision(point, circle) {
         py *= dp
     }
     
-    if (!nearest)
-        nearest = tmp
-    nearest[0] = x1 + px
-    nearest[1] = y1 + py
-    
+	var nearest = new Point(x1 + px, y1 + py);
+	
     //len2 of p
-    var pLen2 = px * px + py * py
+    var pLen2 = px * px + py * py;
     
     //check collision
-    return pointCircleCollide(nearest, circle, radius)
+    return pointCircleCollision(nearest, circle)
             && pLen2 <= dLen2 && (px * dx + py * dy) >= 0
-} */
+} 
