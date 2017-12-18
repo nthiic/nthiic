@@ -1,6 +1,13 @@
 /**
  * Classes
  */
+var constructors = {
+	Circle : Circle,
+	Point : Point,
+	Obstacle : Obstacle,
+	Dude : Dude
+};
+ 
 function Circle(x, y, radius){
   this.x = x;
   this.y = y;
@@ -8,6 +15,20 @@ function Circle(x, y, radius){
   this.clone = function(){
     return new Circle(this.x, this.y, this.radius);
   };
+  this.save = function(){
+	  return {
+		type : 'Circle',
+		x : this.x,  
+		y : this.y,  
+		radius : this.radius  
+	  };
+  };
+  this.load = function(obj){
+	for(var k in obj){
+		this[k] = obj[k];
+	}
+	return this;
+  };  
 }
 
  function Point(x, y){
@@ -18,7 +39,20 @@ function Circle(x, y, radius){
   };
   this.equals = function(obj){
 	  return this.x == obj.x && this.y == obj.y;
-  }
+  };
+  this.save = function(){
+	  return {
+		type : 'Point',
+		x : this.x,
+		y : this.y
+	  };
+  };
+  this.load = function(obj){
+	for(var k in obj){
+		this[k] = obj[k];
+	}
+	return this;
+  };
 }
 
 function Obstacle(x, y, radius){
@@ -28,6 +62,21 @@ function Obstacle(x, y, radius){
   this.uid = getNewUID();
   this.clone = function(){
     return new Obstacle(this.x, this.y, this.radius);
+  };
+    this.save = function(){
+	  return {
+		type : 'Obstacle',
+		x : this.x,  
+		y : this.y,
+		radius : this.radius,
+		uid : this.uid
+	  };
+  };
+  this.load = function(obj){
+	for(var k in obj){
+		this[k] = obj[k];
+	}
+	return this;
   };
 }
 
@@ -40,8 +89,7 @@ Dude.prototype = {
 	PAW_LEN : 30,
 	
 	constructor : Dude,
-	canvas : '',
-	ctx : '',
+	
 	head : '',
 	body : '',
 	tail : '',
@@ -54,12 +102,41 @@ Dude.prototype = {
 	angle : 0,	
 	tmpAngle : 0,	
 	
+	save : function (){
+		var res = {
+			type : 'Dude'
+		};
+		for(var k in this){
+			if(typeof this[k] != 'function'){
+				if(this[k]['save']){
+					res[k] = this[k].save();
+				}else{
+					res[k] = this[k];
+				}
+			}
+		}
+		return res;
+	},
 	
-	init : function(x, y, canvas){
-		this.coords = [];
-		this.canvas = canvas;
-		this.ctx = canvas.getContext('2d');
-		
+	load : function (obj){
+		/* if(!isNaN(obj.x) && !isNaN(obj.y)){
+			this.init(obj.x, obj.y);
+		} */
+		for(var k in obj){
+			if(obj[k]['type']){
+				//composite
+				if(constructors[obj[k]['type']]){
+					var field = new constructors[obj[k]['type']]().load(obj[k]);
+					this[k] = field;
+				}
+			}else{
+				this[k] = obj[k];
+			}		
+		}
+		return this;
+	},
+	
+	init : function(x, y){
 		this.x = x;
 		this.y = y;
 		
@@ -69,7 +146,8 @@ Dude.prototype = {
 		return this;
 	},
 	
-	step : function(targ, env) {
+	step : function(targ, env, canvas) {
+		var ctx = canvas.getContext('2d');
 		if(targ){
 			var toCollide = false;
 			//new course
@@ -78,8 +156,8 @@ Dude.prototype = {
 				this.resetCourse();
 			}else{
 				//check collision course				
-				this.ctx.lineWidth = 2;
-				this.ctx.strokeStyle = "#ff00ff";
+				ctx.lineWidth = 2;
+				ctx.strokeStyle = "#ff00ff";
 				var pawPI = Math.PI / 2;
 				var tips = [
 						new Point(this.head.x + this.FOV * this.kx, this.head.y + this.FOV * this.ky),
@@ -98,16 +176,16 @@ Dude.prototype = {
 						new Point(this.tail.x + this.PAW_LEN * Math.cos(this.tmpAngle + pawPI), this.tail.y - this.PAW_LEN * Math.sin(this.tmpAngle + pawPI)),
 						new Point(this.tail.x + this.PAW_LEN * Math.cos(this.tmpAngle - pawPI), this.tail.y - this.PAW_LEN * Math.sin(this.tmpAngle - pawPI))
 					];
-				/* for(var i = this.RADUIS; i <= this.FOV; i += 1){
-					tips.push(new Point(this.head.x + i * this.kx, this.head.y - i * this.ky));
-				} */
+
 				toCollide = this.checkCollisionCourse(tips, env);
 				switch(toCollide){					
-					case 'rear':
-					case 'mid':
-					case 'front'://other turn direction? right-left
+					case 'left'://not sure about this one
+						ctx.strokeStyle = "#ff0000";
+						this.tmpAngle += this.A_SPEED;
+					break
+					case 'right':
 					case 'sensors':
-						this.ctx.strokeStyle = "#ff0000";
+						ctx.strokeStyle = "#ff0000";
 						this.tmpAngle -= this.A_SPEED;
 					break;
 				}
@@ -121,13 +199,13 @@ Dude.prototype = {
 				this.kx = Math.cos(this.tmpAngle);
 				this.ky = -Math.sin(this.tmpAngle);
 				// Draw the angle - debug
-				this.ctx.beginPath();
+				ctx.beginPath();
 				for(var t = 0; t < tips.length; t++){
 					var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
-					this.ctx.moveTo(start.x, start.y);
-					this.ctx.lineTo(tips[t].x, tips[t].y);
+					ctx.moveTo(start.x, start.y);
+					ctx.lineTo(tips[t].x, tips[t].y);
 				}
-				this.ctx.stroke();
+				ctx.stroke();
 			}
 			
 			this.tail.x = this.body.x - this.kx * this.RADUIS * 2;
@@ -146,15 +224,15 @@ Dude.prototype = {
 				}
 		}
 		
-		this.ctx.beginPath();
+		ctx.beginPath();
 
-		this.ctx.arc(this.head.x, this.head.y, this.head.radius, Math.PI * 2, false);
-		this.ctx.arc(this.body.x, this.body.y, this.body.radius, Math.PI * 2, false);
-		this.ctx.arc(this.tail.x, this.tail.y, this.tail.radius, Math.PI * 2, false);
+		ctx.arc(this.head.x, this.head.y, this.head.radius, Math.PI * 2, false);
+		ctx.arc(this.body.x, this.body.y, this.body.radius, Math.PI * 2, false);
+		ctx.arc(this.tail.x, this.tail.y, this.tail.radius, Math.PI * 2, false);
 		
-		this.ctx.fillStyle = 'blue';
-		this.ctx.strokeStyle = 'black';
-		this.ctx.fill();
+		ctx.fillStyle = 'blue';
+		ctx.strokeStyle = 'black';
+		ctx.fill();
 	},
 	resetCourse : function(){
 		this.dx = this.myTarg.x - this.head.x;
@@ -169,20 +247,14 @@ Dude.prototype = {
 		for(var k in env){
 			for(var t = 0; t < tips.length; t++){
 				var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
-				// if(pointCircleCollision(tips[t], env[k])){
+				
 				if(lineCircleCollide(start, tips[t], env[k])){
-					if(t >= tips.length - 2){
-						//rear
-						return 'rear';
-					}else if(t >= tips.length - 4){
-						//mid
-						return 'mid';
-					}else if(t >= tips.length - 6){
-						//front legs
-						return 'front';
-					}					
+					if(t >= tips.length - 6){
+						//legs
+						return t % 2 == 0 ? 'left' : 'right';
+					}
 					return 'sensors';
-				}
+				}				
 			}
 		}
 		return false;
@@ -225,7 +297,7 @@ function renderAll(){
 		ctx.fill();
 	}
 	if(dude){
-		dude.step(targetPoint, obstacles);
+		dude.step(targetPoint, obstacles, canvas);
 	}
 }
 
@@ -241,6 +313,10 @@ document.getElementById('canvas').addEventListener('click', function (event) {
 		obstacles[obst.uid] = obst;
 		console.log('added', obst);
 	}else if(event.shiftKey){//kill obstacle
+		console.log(JSON.stringify(saveScene()));		
+		if(event.altKey){
+			loadScene(JSON.parse(prompt('loadData')));
+		}
 		for(var k in obstacles){
 			var ob = obstacles[k];
 			if(Math.abs(ob.x - clickPoint.x) < ob.radius &&
@@ -257,11 +333,54 @@ document.getElementById('canvas').addEventListener('click', function (event) {
 	
 }.bind(this));
 
+function destroyScene(){
+	dude = null;
+	targetPoint = null;
+	for(var k in obstacles){
+		delete obstacles[k];
+	}
+}
+
+function loadScene(obj){
+	destroyScene();
+	for(var k in obj){
+		switch (k){
+			case 'obstacles':
+				var obsts = obj[k];
+				for(var j in obsts){
+					obstacles[j] = new Obstacle().load(obsts[j]);
+				}
+			break;
+			case 'targetPoint':
+				targetPoint = new Point().load(obj[k]);
+			break;
+			case 'dude':
+				dude = new Dude().load(obj[k]);
+			break;			
+		}
+	}
+}
+
+function saveScene(){
+	var res = {
+		obstacles : {}
+	};
+	for(var k in obstacles){
+		res.obstacles[k] = obstacles[k].save();
+	}
+	if(targetPoint){
+		res.targetPoint = targetPoint.save();
+	}
+	if(dude){
+		res.dude = dude.save();
+	}
+	return res;
+}
 /**
  * entities
  */
 var targetPoint;
-var dude = new Dude().init(400, 300, document.getElementById('canvas'));
+var dude = new Dude().init(400, 300);
 var obstacles = {};
 
 //init
