@@ -309,22 +309,22 @@ Spring.prototype = {
 	},
 	update : function () {
 		// Compute desired force
-		var dx = p2.x - p1.x,
-			dy = p2.y - p1.y + 1,
+		var dx = this.p2.x - this.p1.x,
+			dy = this.p2.y - this.p1.y + 1,
 			dd = Math.sqrt(dx * dx + dy * dy) + 0.0001,
-			tf = (dd - this.restLength) / (dd * (p1.massInv + p2.massInv)) * this.strength,
+			tf = (dd - this.restLength) / (dd * (this.p1.massInv + this.p2.massInv)) * this.strength,
 			f;
 
 		// Apply forces
-		if (!p1.fixed) {
-		  f = tf * p1.massInv;
-		  p1.x += dx * f;
-		  p1.y += dy * f + GRAVITY;
+		if (!this.p1.fixed) {
+		  f = tf * this.p1.massInv;
+		  this.p1.x += dx * f;
+		  this.p1.y += dy * f + GRAVITY;
 		}
-		if (!p2.fixed) {
-		  f = -tf * p2.massInv;
-		  p2.x += dx * f;
-		  p2.y += dy * f + GRAVITY;
+		if (!this.p2.fixed) {
+			f = -tf * this.p2.massInv;
+			this.p2.x += dx * f;
+			this.p2.y += dy * f + GRAVITY;
 		}
   },
   save : function(){
