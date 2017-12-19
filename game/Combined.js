@@ -192,10 +192,11 @@ Dude.prototype = {
 					break;
 				}
 				if(!toCollide && this.tmpAngle !== this.angle){
-					if(Math.abs(this.tmpAngle - this.angle) < this.A_SPEED){
+					var dAngle = this.tmpAngle - this.angle;
+					if(Math.abs(dAngle) < this.A_SPEED){
 						this.resetCourse();
-					}else{
-						this.tmpAngle += this.A_SPEED;
+					}else{						
+						this.tmpAngle -= this.A_SPEED * (Math.abs(dAngle) / dAngle);
 					}
 				}
 				this.kx = Math.cos(this.tmpAngle);
@@ -263,13 +264,13 @@ Dude.prototype = {
 	}
 }
 
-function Particle(x, y, mass, fixed) {
+function Particle(x, y, fixed) {
 	this.type = 'Particle';
 	this.x = x || 0;
 	this.y = y || 0;
 	this.ox = this.x;
 	this.oy = this.y;
-	this.mass = mass || 1.0;
+	this.mass = 1.0;
 	this.massInv = 1.0 / this.mass;
 	this.fixed = fixed;
 	this.update = function () {};
@@ -361,7 +362,7 @@ function Sim() {
 	this.tick = function (dt) {
 		var p = this.particles.length;
 		while (p--) {			
-			//this.particles[p].update();
+			this.particles[p].update();
 		}
 		var s = this.springs.length;
 		while (s--) this.springs[s].update();
@@ -397,8 +398,8 @@ function Sim() {
 			}else if(k == 'particles' || k == 'springs'){
 				this[k] = [];
 				for(var c = 0; c < obj[k].length; c++){
-					if(constructors[obj[k]['type']]){
-						var field = new constructors[obj[k]['type']]().load(obj[k]);
+					if(constructors[obj[k][c]['type']]){
+						var field = new constructors[obj[k][c]['type']]().load(obj[k][c]);
 						this[k].push(field);
 					}
 				}
@@ -421,18 +422,18 @@ Rope.prototype = {
 	old : '',
 	width : '',
 	height : '',
-	init : function(pStart, pEnd, w, h, allArr){
+	init : function(pStart, pEnd, w, h, allArr, canvas){
 		// Create a new system
 		this.sim = new Sim();
 		this.old = new Date().getTime();
 		this.width = w;
 		this.height = h;
 		this.uid = new Date().getTime().toString() + Math.random();
-		this.doRope(pStart, pEnd, allArr);
+		this.doRope(pStart, pEnd, allArr, canvas);
 		return this;
 	},
 
-	doRope : function(pStart, pEnd, allArr){
+	doRope : function(pStart, pEnd, allArr, canvas){
 		this.sim.particles = [];
 		this.sim.springs = [];
 		var op,
@@ -442,19 +443,19 @@ Rope.prototype = {
 			count = length / step;
 
 		if(allArr){
-			console.log(allArr);
+			// console.log(allArr);
 			for (var i = 0; i < allArr.length; ++i) {
-				console.log(allArr[i].x, allArr[i].y, false, allArr[i].fixed);
-				var np = new Particle(allArr[i].x, allArr[i].y, false, allArr[i].fixed);
+				// console.log(allArr[i].x, allArr[i].y, false, allArr[i].fixed);
+				var np = new Particle(allArr[i].x, allArr[i].y, allArr[i].fixed);
 				this.sim.particles.push(np);
-
-				if (i > 0) this.sim.springs.push(new Spring().init(np, op, step, 1.0));
-
+				if (i > 0) {
+					this.sim.springs.push(new Spring().init(np, op, step, 1.0));
+				}
 				op = np;
 			}
 		}else{
 			for (var i = 0; i < count; ++i) {
-				var np = new Particle(i * step, 20, 10.1);
+				var np = new Particle(i * step, 20);
 				this.sim.particles.push(np);
 
 				if (i > 0) this.sim.springs.push(new Spring().init(np, op, step, 1.0));
@@ -467,7 +468,6 @@ Rope.prototype = {
 			anchor.x = pStart.x;
 			anchor.y = pStart.y;
 
-			// Move last particle with mouse
 			this.last = this.sim.particles[count - 1];
 			this.last.fixed = pEnd.fixed;
 			this.last.x = pEnd.x;
@@ -506,13 +506,13 @@ Rope.prototype = {
 														   startArr[startArr.length - 1],
 														   this.width,
 														   this.height,
-														   startArr));
+														   startArr, event.currentTarget));
 														   
 					simulationTickers.push(new Rope().init(endArr[0],
 														   endArr[endArr.length - 1],
 														   this.width,
 														   this.height,
-														   endArr));
+														   endArr, event.currentTarget));
 				}
 				
 				this.destroy();
@@ -525,20 +525,19 @@ Rope.prototype = {
 	},
 	
 	step : function(ctx) {
-		var now = new Date().getTime(),
+		//var now = new Date().getTime(),
 		// delta = now - this.old;
+		//TODO use FPS here
 		delta = 1000 / 30;
 
-		if(this.sim.tick){
-			this.sim.tick(delta);
-		}else{
-			console.log('no sim tick');
-		}
+		this.sim.tick(delta);
+
 		var p = this.sim.particles.length;
 		while (p--) {
 			var particle = this.sim.particles[p];
 			ctx.beginPath();
 			ctx.arc(particle.x, particle.y, 5, Math.PI * 2, false);
+			ctx.fillStyle = 'black';
 			ctx.strokeStyle = 'black';
 			ctx.fill();
 		}
@@ -553,7 +552,7 @@ Rope.prototype = {
 			ctx.lineWidth = 1;
 			ctx.stroke();
 		}
-		this.old = now;
+		// this.old = now;
 	},	
 	save : function (){
 		var res = {};
@@ -568,7 +567,7 @@ Rope.prototype = {
 		}
 		return res;
 	},	
-	load : function (obj){
+	load : function (obj, canvas){
 		for(var k in obj){
 			if(obj[k]['type']){
 				//composite
@@ -580,6 +579,7 @@ Rope.prototype = {
 				this[k] = obj[k];
 			}		
 		}
+		this.doRope(null, null, this.sim.particles, canvas);
 		return this;
 	}
 }
@@ -619,17 +619,17 @@ document.getElementById('canvas').height = window.innerHeight - 150;
 simulationTickers.push(new Rope().init(new Point(Math.random() * 800, Math.random() * 600, true),
                                        new Point(Math.random() * 800, Math.random() * 600, true),
                                        document.getElementById('canvas').width,
-									   document.getElementById('canvas').height));
+									   document.getElementById('canvas').height, null, canvas));
 
 simulationTickers.push(new Rope().init(new Point(Math.random() * 800, Math.random() * 600, true),
                                        new Point(Math.random() * 800, Math.random() * 600, true),
                                        document.getElementById('canvas').width,
-									   document.getElementById('canvas').height));
+									   document.getElementById('canvas').height, null, canvas));
 
 simulationTickers.push(new Rope().init(new Point(Math.random() * 800, Math.random() * 600, true),
                                        new Point(Math.random() * 800, Math.random() * 600, true),
                                        document.getElementById('canvas').width,
-									   document.getElementById('canvas').height));
+									   document.getElementById('canvas').height, null, canvas));
 
 
 /**
@@ -653,6 +653,7 @@ function renderAll(){
 	var ctx = canvas.getContext('2d');
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	for(var i = simulationTickers.length - 1; i >= 0; i--){
+		ctx.beginPath();
 		simulationTickers[i].step(ctx);
 	}
 	for(var k in obstacles){
@@ -738,7 +739,7 @@ function loadScene(obj){
 			break;
 			case 'simulationTickers':
 				for(var c = 0; c < obj[k].length; c++){
-					var rope = new Rope().load(obj[k][c]);
+					var rope = new Rope().load(obj[k][c], canvas);
 					simulationTickers.push(rope);
 				}
 			break;			
