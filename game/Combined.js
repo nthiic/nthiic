@@ -372,7 +372,7 @@ function Sim() {
 			if(typeof this[k] != 'function'){
 				if(this[k]['save']){
 					res[k] = this[k].save();
-				}else if(k == 'particles' && k == 'springs'){
+				}else if(k == 'particles' || k == 'springs'){
 					var arr = [];
 					for(var c = 0; c < this[k].length; c++){
 						arr.push(this[k][c].save());
@@ -394,7 +394,7 @@ function Sim() {
 					var field = new constructors[obj[k]['type']]().load(obj[k]);
 					this[k] = field;
 				}
-			}else if(k == 'particles' && k == 'springs'){
+			}else if(k == 'particles' || k == 'springs'){
 				this[k] = [];
 				for(var c = 0; c < obj[k].length; c++){
 					if(constructors[obj[k]['type']]){
@@ -526,7 +526,8 @@ Rope.prototype = {
 	
 	step : function(ctx) {
 		var now = new Date().getTime(),
-		delta = now - this.old;
+		// delta = now - this.old;
+		delta = 1000 / 30;
 
 		if(this.sim.tick){
 			this.sim.tick(delta);
@@ -684,7 +685,7 @@ document.getElementById('canvas').addEventListener('click', function (event) {
 		obstacles[obst.uid] = obst;
 		console.log('added', obst);
 	}else if(event.shiftKey){//kill obstacle
-		console.log(JSON.stringify(saveScene()));		
+		// console.log(JSON.stringify(saveScene()));		
 		document.getElementById('save-out').innerHTML = JSON.stringify(saveScene());
 		if(event.altKey){
 			loadScene(JSON.parse(prompt('loadData')));
@@ -700,9 +701,7 @@ document.getElementById('canvas').addEventListener('click', function (event) {
 	}else{//set target
 		targetPoint = clickPoint.clone();
 		console.log('target', targetPoint);
-	}
-	
-	
+	}	
 }.bind(this));
 
 
@@ -716,9 +715,9 @@ function destroyScene(){
 	for(var k in obstacles){
 		delete obstacles[k];
 	}
-	for(var k in simulationTickers){
-		delete simulationTickers[k];
-	}	
+	// for(var k in simulationTickers){
+	simulationTickers.splice(0);
+	// }	
 }
 
 function loadScene(obj){
@@ -738,9 +737,9 @@ function loadScene(obj){
 				dude = new Dude().load(obj[k]);
 			break;
 			case 'simulationTickers':
-				// debugger
 				for(var c = 0; c < obj[k].length; c++){
-					simulationTickers.push(new Rope().load(obj[k][c]));
+					var rope = new Rope().load(obj[k][c]);
+					simulationTickers.push(rope);
 				}
 			break;			
 		}
