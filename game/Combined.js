@@ -291,14 +291,23 @@ function Particle(x, y, mass, fixed) {
   };  
 }
 
-function Spring(p1, p2, restLength, strength) {
-	this.type = 'Spring';
-	this.p1 = p1;
-	this.p2 = p2;
-	this.restLength = restLength || 10;
-	this.strength = strength || 1.0;
-
-	this.update = function () {
+function Spring(){}
+Spring.prototype = {
+	constructor : Spring,
+	type : 'Spring',
+	p1 : '',
+	p2 : '',
+	restLength : '',
+	strength : '',
+	init : function(p1, p2, restLength, strength){
+		this.type = 'Spring';
+		this.p1 = p1;
+		this.p2 = p2;
+		this.restLength = restLength || 10;
+		this.strength = strength || 1.0;
+		return this;
+	},
+	update : function () {
 		// Compute desired force
 		var dx = p2.x - p1.x,
 			dy = p2.y - p1.y + 1,
@@ -317,8 +326,8 @@ function Spring(p1, p2, restLength, strength) {
 		  p2.x += dx * f;
 		  p2.y += dy * f + GRAVITY;
 		}
-  };
-  this.save = function(){
+  },
+  save : function(){
 	  var res = {};
 	  for(var k in this){
 		  if(typeof this[k] != 'function'){
@@ -327,8 +336,8 @@ function Spring(p1, p2, restLength, strength) {
 	  }
 	  return res;
 		
-  };
-  this.load = function(obj){
+  },
+  load : function(obj){
 	for(var k in obj){
 		if(obj[k]['type']){
 				//composite
@@ -341,7 +350,7 @@ function Spring(p1, p2, restLength, strength) {
 			}
 	}
 	return this;
-  }; 
+  }
 }
 
 function Sim() {
@@ -439,7 +448,7 @@ Rope.prototype = {
 				var np = new Particle(allArr[i].x, allArr[i].y, false, allArr[i].fixed);
 				this.sim.particles.push(np);
 
-				if (i > 0) this.sim.springs.push(new Spring(np, op, step, 1.0));
+				if (i > 0) this.sim.springs.push(new Spring().init(np, op, step, 1.0));
 
 				op = np;
 			}
@@ -448,7 +457,7 @@ Rope.prototype = {
 				var np = new Particle(i * step, 20, 10.1);
 				this.sim.particles.push(np);
 
-				if (i > 0) this.sim.springs.push(new Spring(np, op, step, 1.0));
+				if (i > 0) this.sim.springs.push(new Spring().init(np, op, step, 1.0));
 
 				op = np;
 			}
