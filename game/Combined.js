@@ -148,7 +148,7 @@ Dude.prototype = {
 		return this;
 	},
 	
-	step : function(targ, env, canvas) {
+	step : function(targ, env, ropes, canvas) {
 		var ctx = canvas.getContext('2d');
 		if(targ){
 			var toCollide = false;
@@ -179,7 +179,7 @@ Dude.prototype = {
 						new Point(this.tail.x + this.PAW_LEN * Math.cos(this.tmpAngle - pawPI), this.tail.y - this.PAW_LEN * Math.sin(this.tmpAngle - pawPI))
 					];
 
-				toCollide = this.checkCollisionCourse(tips, env);
+				toCollide = this.checkCollisionCourse(tips, env, ropes);
 				switch(toCollide){					
 					case 'left'://not sure about this one
 						ctx.strokeStyle = "#ff0000";
@@ -246,11 +246,10 @@ Dude.prototype = {
 		this.kx = Math.cos(this.tmpAngle);
 		this.ky = -Math.sin(this.tmpAngle);
 	},
-	checkCollisionCourse : function(tips, env, ropes){
-		for(var k in env){
-			for(var t = 0; t < tips.length; t++){
-				var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
-				
+	checkCollisionCourse : function(tips, env, ropes){		
+		for(var t = 0; t < tips.length; t++){
+			var start = t >= tips.length - 2 ? this.tail : (t >= tips.length - 4 ? this.body : this.head);
+			for(var k in env){
 				if(lineCircleCollide(start, tips[t], env[k])){
 					if(t >= tips.length - 6){
 						//legs
@@ -259,11 +258,27 @@ Dude.prototype = {
 					return 'sensors';
 				}				
 			}
+			for(var i = 0; i < ropes.length; i++){
+				for(var o = 0; o < ropes[i].sim.springs.length; o++){
+					var spr = ropes[i].sim.springs[o];
+					var intersects = checkLineIntersection(spr.p1.x, spr.p1.y, spr.p2.x, spr.p2.y, 
+															start.x, start.y, tips[t].x, tips[t].y);
+					if(intersects){
+						if(t >= tips.length - 6){
+							//legs
+							return t % 2 == 0 ? 'left' : 'right';
+						}
+						return 'sensors';
+					}
+				}
+			}
 		}
 		return false;
 	}
 }
-
+//////////////////////////
+/////////Rope/////////////
+//////////////////////////
 function Particle(x, y, fixed) {
 	this.type = 'Particle';
 	this.x = x || 0;
@@ -462,7 +477,6 @@ Rope.prototype = {
 
 				op = np;
 			}
-			// Fix the first particle
 			anchor = this.sim.particles[0];
 			anchor.fixed = pStart.fixed;
 			anchor.x = pStart.x;
@@ -524,11 +538,9 @@ Rope.prototype = {
 		this.sim.particles.splice(0);
 	},
 	
-	step : function(ctx) {
-		//var now = new Date().getTime(),
-		// delta = now - this.old;
+	step : function(ctx) {		
 		//TODO use FPS here
-		delta = 1000 / 30;
+		var delta = 1000 / 30;
 
 		this.sim.tick(delta);
 
@@ -672,7 +684,7 @@ function renderAll(){
 		ctx.fill();
 	}
 	if(dude){
-		dude.step(targetPoint, obstacles, canvas);
+		dude.step(targetPoint, obstacles, simulationTickers, canvas);
 	}
 }
 
@@ -767,43 +779,39 @@ function saveScene(){
 	return res;
 }
 //collisions
-function checkLineIntersection(line1StartX, line1StartY, line1EndX, line1EndY, line2StartX, line2StartY, line2EndX, line2EndY) {
-    // if the lines intersect, the result contains the x and y of the intersection (treating the lines as infinite) and booleans for whether line segment 1 or line segment 2 contain the point
-    var denominator, a, b, numerator1, numerator2, result = {
-        x: null,
-        y: null,
-        onLine1: false,
-        onLine2: false
-    };
-    denominator = ((line2EndY - line2StartY) * (line1EndX - line1StartX)) - ((line2EndX - line2StartX) * (line1EndY - line1StartY));
-    if (denominator == 0) {
-        return result;
-    }
-    a = line1StartY - line2StartY;
-    b = line1StartX - line2StartX;
-    numerator1 = ((line2EndX - line2StartX) * a) - ((line2EndY - line2StartY) * b);
-    numerator2 = ((line1EndX - line1StartX) * a) - ((line1EndY - line1StartY) * b);
-    a = numerator1 / denominator;
-    b = numerator2 / denominator;
+function checkLineIntersection( x11,  y11,  x12,  y12,  x21,  y21,  x22,  y22)
+{
 
-    // if we cast these lines infinitely in both directions, they intersect here:
-    result.x = line1StartX + (a * (line1EndX - line1StartX));
-    result.y = line1StartY + (a * (line1EndY - line1StartY));
-/*
-        // it is worth noting that this should be the same as:
-        x = line2StartX + (b * (line2EndX - line2StartX));
-        y = line2StartX + (b * (line2EndY - line2StartY));
-        */
-    // if line1 is a segment and line2 is infinite, they intersect if:
-    if (a > 0 && a < 1) {
-        result.onLine1 = true;
-    }
-    // if line2 is a segment and line1 is infinite, they intersect if:
-    if (b > 0 && b < 1) {
-        result.onLine2 = true;
-    }
-    // if line1 and line2 are segments, they intersect if both of the above are true
-    return result;
+	var maxx1 = Math.max(x11, x12), maxy1 = Math.max(y11, y12);
+	var minx1 = Math.min(x11, x12), miny1 = Math.min(y11, y12);
+	var maxx2 = Math.max(x21, x22), maxy2 = Math.max(y21, y22);
+	var minx2 = Math.min(x21, x22), miny2 = Math.min(y21, y22);
+
+	if (minx1 > maxx2 || maxx1 < minx2 || miny1 > maxy2 || maxy1 < miny2)
+	  return false;  // Момент, када линии имеют одну общую вершину...
+	 
+
+	var dx1 = x12-x11, dy1 = y12-y11; // Длина проекций первой линии на ось x и y
+	var dx2 = x22-x21, dy2 = y22-y21; // Длина проекций второй линии на ось x и y
+	var dxx = x11-x21, dyy = y11-y21;
+	var div, mul;
+
+
+	if ((div = (dy2*dx1-dx2*dy1)) == 0) 
+	  return false; // Линии параллельны...
+	if (div > 0) {
+	  if ((mul = (dx1*dyy-dy1*dxx)) < 0 || mul > div)
+		return false; // Первый отрезок пересекается за своими границами...
+	  if ((mul = (dx2*dyy-dy2*dxx)) < 0 || mul > div)
+		 return false; // Второй отрезок пересекается за своими границами...
+	}
+
+	if ((mul = -(dx1*dyy-dy1*dxx)) < 0 || mul > -div)
+	  return false; // Первый отрезок пересекается за своими границами...
+	if ((mul = -(dx2*dyy-dy2*dxx)) < 0 || mul > -div)
+	  return false; // Второй отрезок пересекается за своими границами...
+
+	return true;
 };
 
 function pointCircleCollision(point, circle) {
